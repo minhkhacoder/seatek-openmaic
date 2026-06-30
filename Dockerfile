@@ -14,6 +14,7 @@ RUN apk add --no-cache python3 build-base g++ cairo-dev pango-dev jpeg-dev gifli
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
+COPY scripts/ ./scripts/
 
 RUN pnpm install --frozen-lockfile
 
@@ -22,6 +23,7 @@ FROM base AS builder
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages ./packages
+COPY --from=deps /app/public ./public
 COPY . .
 
 RUN pnpm build
@@ -39,6 +41,9 @@ RUN apk add --no-cache libc6-compat cairo pango jpeg giflib librsvg
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
+
+RUN mkdir -p /app/data && \
+    chown -R nextjs:nodejs /app/data
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
